@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'viewmodels/auth_provider.dart';
 import 'viewmodels/discovery_provider.dart';
-import 'services/firebase_service.dart';
 import 'views/auth/login_screen.dart';
 import 'views/auth/signup_screen.dart';
 import 'views/home/home_screen.dart';
@@ -14,18 +11,7 @@ import 'views/matches/matches_screen.dart';
 import 'views/events/events_screen.dart';
 import 'views/profile/profile_screen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Firebase'i başlat
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
-  // Firebase Service'i başlat ve mock datayı yükle
-  final firebaseService = FirebaseService();
-  await firebaseService.initializeWithMockData();
-  
+void main() {
   runApp(const TabureApp());
 }
 

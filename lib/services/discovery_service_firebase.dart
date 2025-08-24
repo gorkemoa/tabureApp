@@ -88,6 +88,14 @@ class DiscoveryService {
     'Consultant',
     'Project Manager',
     'Business Analyst',
+    'DevOps Engineer',
+    'Backend Developer',
+    'Frontend Developer',
+    'Mobile Developer',
+    'Tech Lead',
+    'CTO',
+    'CEO',
+    'Founder',
   ];
 
   static const List<String> lookingForOptions = [

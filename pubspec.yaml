@@ -46,6 +46,8 @@ dependencies:
   # Authentication & Social Login
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+  firebase_storage: ^12.3.4
   google_sign_in: ^6.2.1
   
   # UI Components
@@ -60,12 +62,14 @@ dependencies:
   # Local Storage
   shared_preferences: ^2.2.2
   
+  # UUID Generator
+  uuid: ^4.4.0
+  
   # Navigation
   go_router: ^13.2.0
   
   # Utils
   intl: ^0.19.0
-  uuid: ^4.3.3
 
 dev_dependencies:
   flutter_test:

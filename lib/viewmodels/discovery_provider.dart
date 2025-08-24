@@ -36,12 +36,13 @@ class DiscoveryProvider extends ChangeNotifier {
   String? get selectedLookingFor => _selectedLookingFor;
   String? get selectedExperienceLevel => _selectedExperienceLevel;
 
-  Future<void> loadUsers() async {
+  Future<void> loadUsers({String? currentUserId}) async {
     _setLoading(true);
     _clearError();
     
     try {
       final users = await _discoveryService.getDiscoverUsers(
+        currentUserId: currentUserId,
         city: _selectedCity,
         profession: _selectedProfession,
         lookingFor: _selectedLookingFor,
@@ -58,17 +59,17 @@ class DiscoveryProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> swipeUser(SwipeAction action) async {
+  Future<bool> swipeUser(SwipeAction action, String currentUserId) async {
     if (!canSwipe || currentUser == null) return false;
     
     try {
-      final isMatch = await _discoveryService.swipeUser(currentUser!.id, action);
+      final isMatch = await _discoveryService.swipeUser(currentUserId, currentUser!.id, action);
       _dailySwipeCount++;
       _moveToNextUser();
       
       // If no more users, load more
       if (!hasMoreUsers) {
-        await loadUsers();
+        await loadUsers(currentUserId: currentUserId);
       }
       
       return isMatch;

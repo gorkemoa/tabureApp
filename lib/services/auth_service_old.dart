@@ -2,7 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user.dart' as app_user;
-import 'firebase_service.dart';
+import 'mock_api_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -11,7 +11,7 @@ class AuthService {
 
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirebaseService _firebaseService = FirebaseService();
+  final MockApiService _mockApi = MockApiService();
   
   app_user.User? _currentAppUser;
   User? _currentFirebaseUser;
@@ -20,8 +20,7 @@ class AuthService {
   static const String _isLoggedInKey = 'is_logged_in';
 
   Future<void> initialize() async {
-    // Firebase'e mock veri ekle (sadece ilk çalıştırmada)
-    await _firebaseService.initializeWithMockData();
+    await _mockApi.initialize();
     
     // Firebase Auth state listener
     _firebaseAuth.authStateChanges().listen((User? user) {
@@ -40,7 +39,7 @@ class AuthService {
     final userId = prefs.getString(_userIdKey);
 
     if (isLoggedIn && userId != null) {
-      _currentAppUser = await _firebaseService.getUserById(userId);
+      _currentAppUser = await _mockApi.getUserById(userId);
     }
   }
 
@@ -53,16 +52,24 @@ class AuthService {
       );
       
       if (credential.user != null) {
-        // Firebase'den kullanıcı bilgilerini al
-        _currentAppUser = await _firebaseService.getUserById(credential.user!.uid);
-        if (_currentAppUser != null) {
-          await _saveUserSession(_currentAppUser!.id);
+        // Mock API'den kullanıcı bilgilerini al
+        final user = await _mockApi.signInWithEmail(email, password);
+        if (user != null) {
+          _currentAppUser = user;
+          await _saveUserSession(user.id);
           return true;
         }
       }
       return false;
     } on FirebaseAuthException catch (e) {
       print('Firebase Auth Error: ${e.message}');
+      // Firebase'de kullanıcı yoksa mock API'yi dene
+      final user = await _mockApi.signInWithEmail(email, password);
+      if (user != null) {
+        _currentAppUser = user;
+        await _saveUserSession(user.id);
+        return true;
+      }
       return false;
     } catch (e) {
       print('Auth Error: $e');
@@ -87,35 +94,13 @@ class AuthService {
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
       
       if (userCredential.user != null) {
-        final firebaseUser = userCredential.user!;
-        
-        // Kullanıcı daha önce kaydolmuş mu kontrol et
-        _currentAppUser = await _firebaseService.getUserById(firebaseUser.uid);
-        
-        if (_currentAppUser == null) {
-          // Yeni kullanıcı, profil oluşturma sayfasına yönlendir
-          // Geçici olarak mock bir kullanıcı oluştur
-          _currentAppUser = app_user.User(
-            id: firebaseUser.uid,
-            email: firebaseUser.email ?? '',
-            firstName: firebaseUser.displayName?.split(' ').first ?? 'Google',
-            lastName: firebaseUser.displayName?.split(' ').last ?? 'User',
-            profession: 'Belirtilmemiş',
-            company: 'Belirtilmemiş',
-            skills: [],
-            lookingFor: 'sosyal bağlantı',
-            profilePhotoUrl: firebaseUser.photoURL ?? 'https://via.placeholder.com/400',
-            city: 'İstanbul',
-            experienceLevel: 'junior',
-            isVerified: true,
-            createdAt: DateTime.now(),
-          );
-          
-          await _firebaseService.saveUser(_currentAppUser!);
+        // Mock API'de kullanıcı oluştur veya al
+        final user = await _mockApi.signInWithGoogle();
+        if (user != null) {
+          _currentAppUser = user;
+          await _saveUserSession(user.id);
+          return true;
         }
-        
-        await _saveUserSession(_currentAppUser!.id);
-        return true;
       }
       return false;
     } catch (e) {
@@ -146,15 +131,13 @@ class AuthService {
       );
       
       if (credential.user != null) {
-        final firebaseUser = credential.user!;
-        
         // Kullanıcı profilini güncelle
-        await firebaseUser.updateDisplayName('$firstName $lastName');
+        await credential.user!.updateDisplayName('$firstName $lastName');
         
-        // Firestore'da kullanıcı oluştur
-        final user = app_user.User(
-          id: firebaseUser.uid,
+        // Mock API'de kullanıcı oluştur
+        final user = await _mockApi.signUp(
           email: email,
+          password: password,
           firstName: firstName,
           lastName: lastName,
           profession: profession,
@@ -165,11 +148,8 @@ class AuthService {
           city: city,
           experienceLevel: experienceLevel,
           linkedinProfile: linkedinProfile,
-          isVerified: false,
-          createdAt: DateTime.now(),
         );
         
-        await _firebaseService.saveUser(user);
         _currentAppUser = user;
         await _saveUserSession(user.id);
         return true;
@@ -188,6 +168,7 @@ class AuthService {
     try {
       await _firebaseAuth.signOut();
       await _googleSignIn.signOut();
+      await _mockApi.signOut();
       _currentAppUser = null;
       _currentFirebaseUser = null;
       await _clearUserSession();

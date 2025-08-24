@@ -24,7 +24,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       }
       
       final discoveryProvider = context.read<DiscoveryProvider>();
-      discoveryProvider.loadUsers();
+      final currentUserId = authProvider.currentUser?.id;
+      discoveryProvider.loadUsers(currentUserId: currentUserId);
     });
   }
 
@@ -250,7 +251,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                         return;
                       }
 
-                      final isMatch = await discoveryProvider.swipeUser(action);
+                      final authProvider = context.read<AuthProvider>();
+                      final currentUserId = authProvider.currentUser?.id;
+                      if (currentUserId == null) return;
+
+                      final isMatch = await discoveryProvider.swipeUser(action, currentUserId);
                       
                       if (isMatch) {
                         _showMatchDialog();
@@ -278,7 +283,13 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                       ),
                       child: IconButton(
                         onPressed: discoveryProvider.canSwipe
-                            ? () => discoveryProvider.swipeUser(SwipeAction.pass)
+                            ? () {
+                                final authProvider = context.read<AuthProvider>();
+                                final currentUserId = authProvider.currentUser?.id;
+                                if (currentUserId != null) {
+                                  discoveryProvider.swipeUser(SwipeAction.pass, currentUserId);
+                                }
+                              }
                             : _showSwipeLimitDialog,
                         icon: Icon(
                           Icons.close,
@@ -299,9 +310,13 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                       child: IconButton(
                         onPressed: discoveryProvider.canSwipe
                             ? () async {
-                                final isMatch = await discoveryProvider.swipeUser(SwipeAction.like);
-                                if (isMatch) {
-                                  _showMatchDialog();
+                                final authProvider = context.read<AuthProvider>();
+                                final currentUserId = authProvider.currentUser?.id;
+                                if (currentUserId != null) {
+                                  final isMatch = await discoveryProvider.swipeUser(SwipeAction.like, currentUserId);
+                                  if (isMatch) {
+                                    _showMatchDialog();
+                                  }
                                 }
                               }
                             : _showSwipeLimitDialog,
