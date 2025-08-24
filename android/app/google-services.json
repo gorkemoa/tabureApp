@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "62473440884",
+    "project_id": "promptsat",
+    "storage_bucket": "promptsat.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:62473440884:android:9006baa79a628e28598b21",
+        "android_client_info": {
+          "package_name": "com.example.tabure"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAfCReDBElJ2Nh3WGm6CE-bGI02TGGOxw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
